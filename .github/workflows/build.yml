@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-20.04'
@@ -58,7 +58,7 @@ jobs:
 
       - name: Upload Release (MacOS)
         if: matrix.platform == 'macos-latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: MacOS APP
           path: src-tauri/target/release/fitnessresolver
@@ -66,7 +66,7 @@ jobs:
 
       - name: Upload Release (Linux)
         if: matrix.platform == 'ubuntu-20.04'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Linux BIN
           path: src-tauri/target/release/fitnessresolver
@@ -74,7 +74,7 @@ jobs:
 
       - name: Upload Release (Windows)
         if: matrix.platform == 'windows-latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Windows EXE
           path: src-tauri/target/release/fitnessresolver.exe
