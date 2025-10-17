@@ -1,0 +1,81 @@
+name: Build-Multi-Platform
+on: push
+
+jobs:
+  jobs_v:
+    name: Pre-Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Output Build Infomation
+        run: |
+          latest_commit_message=$(git log -1 --pretty=%B)
+          echo latest_commit_message
+
+  release:
+    needs: jobs_v
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, ubuntu-20.04, windows-latest]
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-20.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev librsvg2-dev
+
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Sync node version and setup cache
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*'
+          cache: 'yarn' # Set this to npm, yarn or pnpm.
+
+      - name: Install frontend dependencies
+        # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
+        run: yarn install # Change this to npm, yarn or pnpm.
+
+      - name: Build the app
+        uses: tauri-apps/tauri-action@v0
+
+      - name: Upload Release (MacOS)
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v3
+        with:
+          name: MacOS APP
+          path: src-tauri/target/release/fitnessresolver
+          retention-days: 7
+
+      - name: Upload Release (Linux)
+        if: matrix.platform == 'ubuntu-20.04'
+        uses: actions/upload-artifact@v3
+        with:
+          name: Linux BIN
+          path: src-tauri/target/release/fitnessresolver
+          retention-days: 7
+
+      - name: Upload Release (Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v3
+        with:
+          name: Windows EXE
+          path: src-tauri/target/release/fitnessresolver.exe
+          retention-days: 7
