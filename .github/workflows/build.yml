@@ -95,6 +95,7 @@ jobs:
         env:
           # 安卓构建需要明确指定 NDK 路径
           NDK_HOME: ${{ matrix.target == 'aarch64-linux-android' && format('{0}/ndk/{1}', env.ANDROID_HOME, matrix.ndk-version) || '' }}
+          TAURI_ANDROID_API_LEVEL: ${{ matrix.ndk-api-level }}
           # 代码签名配置（按需启用）
           # TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           # TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
