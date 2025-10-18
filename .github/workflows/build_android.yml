@@ -53,7 +53,7 @@ jobs:
           NDK_HOME: ${{ env.NDK_HOME }}
 
       - name: Build Tauri Android APK
-        run: npm run tauri android build -- --target aarch64 --debug
+        run: npm run tauri android build -- --target aarch64
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
@@ -64,6 +64,4 @@ jobs:
         with:
           name: tauri-android-apk
           path: |
-            src-tauri/target/aarch64-linux-android/release/bundle/apk/*.apk
-            src-tauri/target/armv7-linux-androideabi/release/bundle/apk/*.apk
-            src-tauri/target/x86_64-linux-android/release/bundle/apk/*.apk
+            src-tauri/gen/android/app/build/outputs/apk/universal/debug/*.apk
