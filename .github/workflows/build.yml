@@ -44,7 +44,6 @@ jobs:
             dependencies: >
               openjdk-17-jdk build-essential
             # 安卓专用 NDK 版本和路径
-            ndk-version: 26.1.10909125
             ndk-target: 34
 
     steps:
@@ -74,7 +73,7 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           # 明确指定 NDK 版本（Tauri 2 推荐 26+）
-          ndk-version: ${{ matrix.ndk-version }}
+          cmdline-tools-version: 12266719
 
       - name: Configure Android linker for Rust
         if: matrix.target == 'aarch64-linux-android'
