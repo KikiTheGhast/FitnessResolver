@@ -11,9 +11,6 @@ importers:
       '@tauri-apps/plugin-opener':
         specifier: ~2.5.0
         version: 2.5.0
-      js-md5:
-        specifier: ^0.8.3
-        version: 0.8.3
     devDependencies:
       '@tauri-apps/cli':
         specifier: ^2
@@ -98,9 +95,6 @@ packages:
   '@tauri-apps/plugin-opener@2.5.0':
     resolution: {integrity: sha512-B0LShOYae4CZjN8leiNDbnfjSrTwoZakqKaWpfoH6nXiJwt6Rgj6RnVIffG3DoJiKsffRhMkjmBV9VeilSb4TA==}
 
-  js-md5@0.8.3:
-    resolution: {integrity: sha512-qR0HB5uP6wCuRMrWPTrkMaev7MJZwJuuw4fnwAzRgP4J4/F8RwtodOKpGp4XpqsLBFzzgqIO42efFAyz2Et6KQ==}
-
 snapshots:
 
   '@tauri-apps/api@2.8.0': {}
@@ -155,5 +149,3 @@ snapshots:
   '@tauri-apps/plugin-opener@2.5.0':
     dependencies:
       '@tauri-apps/api': 2.8.0
-
-  js-md5@0.8.3: {}
