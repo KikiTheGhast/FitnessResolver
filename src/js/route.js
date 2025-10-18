@@ -2,7 +2,7 @@ let latitude = (31.318217 + 31.31997) / 2, longitude = (121.392548 + 121.393845)
 
 /**
  * 支持旋转的跑道位置计算函数（默认南北向，可自定义旋转角度）
- * @param {number} t - 时间（秒）
+ * @param {number} distance - 距离（米）
  * @param {number} centerLat - 跑道中心点纬度
  * @param {number} centerLng - 跑道中心点经度
  * @param {number} rotation - 旋转角度（度，0°=东西向，90°=南北向，顺时针为正）
@@ -10,16 +10,15 @@ let latitude = (31.318217 + 31.31997) / 2, longitude = (121.392548 + 121.393845)
  * @param {number} offsetY - Y方向偏移（米，向上为正）
  * @returns {Object} { latitude, longitude } 实时经纬度
  */
-function getTrackPositionWithRotation(t, centerLat = latitude, centerLng = longitude, rotation = 90, offsetX = 0, offsetY = 0) {
+function getTrackPosition(distance, centerLat = latitude, centerLng = longitude, rotation = 90, offsetX = 0, offsetY = 0) {
     // 1. 标准跑道参数（内圈）
     const straightLength = 84.39; // 单段直道长度（米）
     const bandRadius = 36.5;       // 弯道半径（米）
     const bandCircumference = Math.PI * bandRadius; // 单段弯道长度（≈114.66米）
     const totalCircumference = 2 * straightLength + 2 * bandCircumference; // ≈400米
 
-    // 2. 速度参数（1公里/6.5分钟）
-    const speed = 1000 / 6.5 / 60; // ≈153.846米/分钟
-    let distance = (speed * t) % totalCircumference; // 累计移动距离
+    // 2. 累计移动距离
+    distance %= totalCircumference;
 
     // 3. 计算原始相对坐标（未旋转，默认东西向长轴）
     let x = 0, y = 0;

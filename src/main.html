@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <link rel="stylesheet" href="index.css" />
+    <link rel="stylesheet" href="main.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="js/md5.min.js"></script>
     <script src="js/request.js"></script>
@@ -13,12 +13,19 @@
 </head>
 
 <body>
-    <button id="start" style="margin:10px;" onclick="onClickStart()">开始跑步</button>
+    <h1>跑步操作界面</h1>
+    <button id="start" onclick="onClickStart()">开始跑步</button>
+    <button id="end" onclick="onClickEnd()" disabled>结束跑步</button>
     <br>
-    <button id="end" style="margin:10px;" onclick="onClickEnd()" disabled>结束跑步</button>
     <br>
     <div>
-        <h3>PS：配速设置的6.5，但是因为误差原因配速会偏小</h3>
+        <div style="display:inline-flex;">
+            <div style="width:100px;">配速：</div>
+            <input id="speed" type="range" min="1" max="15.5" step="0.5" value="6.5" oninput="changeSpeed()"
+                onchange="changeSpeed()">
+            <div style="width:150px;" id="speedDisplay"></div>
+        </div>
+        <h3>PS：因为误差原因配速会比设置的小，将条拉到最右边可以停止移动</h3>
         <p>当前进度</p>
         <p id="progress"></p>
     </div>
