@@ -1,87 +1,91 @@
-name: Build-Multi-Platform
-on: push
+name: Tauri 2 Multi-Platform Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  jobs_v:
-    name: Pre-Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
-      - name: Output Build Infomation
-        run: |
-          latest_commit_message=$(git log -1 --pretty=%B)
-          echo latest_commit_message
-
-  release:
-    needs: jobs_v
-    permissions:
-      contents: write
+  build:
+    name: Build for ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: false  # 单个平台失败不影响其他平台
       matrix:
-        platform: [macos-latest, ubuntu-20.04, windows-latest]
-    runs-on: ${{ matrix.platform }}
+        # 直接定义平台数组，每个元素包含完整配置
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact-name: windows
+            build-command: cargo tauri build --target x86_64-pc-windows-msvc
+            output-path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/
+
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact-name: macos-x86_64
+            build-command: cargo tauri build --target x86_64-apple-darwin
+            output-path: src-tauri/target/x86_64-apple-darwin/release/bundle/
+
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact-name: macos-arm64
+            build-command: cargo tauri build --target aarch64-apple-darwin
+            output-path: src-tauri/target/aarch64-apple-darwin/release/bundle/
+
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact-name: linux-x86_64
+            build-command: cargo tauri build --target x86_64-unknown-linux-gnu
+            output-path: src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/
+            dependencies: >
+              libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev
+              libayatana-appindicator3-dev librsvg2-dev patchelf
+
+          - os: ubuntu-latest
+            target: aarch64-linux-android
+            artifact-name: android
+            build-command: cargo tauri build --target aarch64-linux-android
+            output-path: src-tauri/target/aarch64-linux-android/release/bundle/
+            dependencies: >
+              openjdk-17-jdk android-sdk-platform-tools android-sdk-build-tools
+              libwebkit2gtk-4.1-dev build-essential
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-20.04'
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+
+      - name: Install system dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest' && matrix.dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev librsvg2-dev
+          sudo apt-get install -y ${{ matrix.dependencies }}
 
-      - name: Rust setup
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup Android SDK
+        if: matrix.target == 'aarch64-linux-android'
+        uses: android-actions/setup-android@v3
 
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
+      - name: Install npm dependencies
+        run: npm ci
 
-      - name: Sync node version and setup cache
-        uses: actions/setup-node@v6
-        with:
-          node-version: 'lts/*'
+      - name: Build Tauri app
+        run: ${{ matrix.build-command }}
 
-       # Install pnpm
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-          run_install: false
-          
-      - name: Install frontend dependencies
-        # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
-        run: pnpm i # Change this to npm, yarn or pnpm.
-
-      - name: Build the app
-        uses: tauri-apps/tauri-action@v0
-
-      - name: Upload Release (MacOS)
-        if: matrix.platform == 'macos-latest'
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: MacOS APP
-          path: src-tauri/target/release/fitnessresolver
-          retention-days: 7
-
-      - name: Upload Release (Linux)
-        if: matrix.platform == 'ubuntu-20.04'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Linux BIN
-          path: src-tauri/target/release/fitnessresolver
-          retention-days: 7
-
-      - name: Upload Release (Windows)
-        if: matrix.platform == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Windows EXE
-          path: src-tauri/target/release/fitnessresolver.exe
-          retention-days: 7
+          name: tauri-build-${{ matrix.artifact-name }}
+          path: ${{ matrix.output-path }}
+          if-no-files-found: error
