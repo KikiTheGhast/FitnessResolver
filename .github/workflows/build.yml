@@ -79,12 +79,10 @@ jobs:
       - name: Configure Android linker for Rust
         if: matrix.target == 'aarch64-linux-android'
         run: |
-          # 导出 NDK 路径
           export NDK_HOME=$ANDROID_HOME/ndk/${{ matrix.ndk-version }}
-          # 设置 aarch64 架构的 Android 链接器
+          # 修正链接器路径：使用 "aarch64-linux-android${API级别}-clang" 格式
           echo "[target.aarch64-linux-android]" > $CARGO_HOME/config.toml
-          echo "linker = '$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android${{ matrix.ndk-target }}-clang'" >> $CARGO_HOME/config.toml
-          # 验证配置
+          echo "linker = '$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android${{ matrix.ndk-api-level }}-clang'" >> $CARGO_HOME/config.toml
           cat $CARGO_HOME/config.toml
 
       - name: Install npm dependencies (including Tauri CLI)
