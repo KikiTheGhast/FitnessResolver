@@ -44,6 +44,7 @@ jobs:
             dependencies: >
               openjdk-17-jdk build-essential
             # 安卓专用 NDK 版本和路径
+            ndk-version: 26.1.10909125
             ndk-target: 34
 
     steps:
