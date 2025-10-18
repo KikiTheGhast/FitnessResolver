@@ -42,8 +42,10 @@ jobs:
             artifact-name: android
             output-path: src-tauri/target/aarch64-linux-android/release/bundle/
             dependencies: >
-              openjdk-17-jdk android-sdk-platform-tools android-sdk-build-tools
-              libwebkit2gtk-4.1-dev build-essential
+              openjdk-17-jdk build-essential
+            # 安卓专用 NDK 版本和路径
+            ndk-version: 26.1.10909125
+            ndk-target: android-34
 
     steps:
       - name: Checkout code
@@ -66,15 +68,36 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ${{ matrix.dependencies }}
 
-      - name: Setup Android SDK
+      # 安卓专用：配置 NDK 并设置 Rust 链接器
+      - name: Setup Android SDK and NDK
         if: matrix.target == 'aarch64-linux-android'
         uses: android-actions/setup-android@v3
+        with:
+          # 明确指定 NDK 版本（Tauri 2 推荐 26+）
+          ndk-version: ${{ matrix.ndk-version }}
+
+      - name: Configure Android linker for Rust
+        if: matrix.target == 'aarch64-linux-android'
+        run: |
+          # 导出 NDK 路径
+          export NDK_HOME=$ANDROID_HOME/ndk/${{ matrix.ndk-version }}
+          # 设置 aarch64 架构的 Android 链接器
+          echo "[target.aarch64-linux-android]" > $CARGO_HOME/config.toml
+          echo "linker = '$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android${{ matrix.ndk-target }}-clang'" >> $CARGO_HOME/config.toml
+          # 验证配置
+          cat $CARGO_HOME/config.toml
 
       - name: Install npm dependencies (including Tauri CLI)
         run: npm install
 
-      - name: Build Tauri app (using npm CLI)
+      - name: Build Tauri app
         run: npx tauri build --target ${{ matrix.target }}
+        env:
+          # 安卓构建需要明确指定 NDK 路径
+          NDK_HOME: ${{ matrix.target == 'aarch64-linux-android' && format('{0}/ndk/{1}', env.ANDROID_HOME, matrix.ndk-version) || '' }}
+          # 代码签名配置（按需启用）
+          # TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          # TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
