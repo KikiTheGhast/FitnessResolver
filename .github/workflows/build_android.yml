@@ -1,0 +1,54 @@
+name: Build Tauri 2 Android APK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x  # Tauri 2 推荐使用 Node.js 18+
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Set up Java (for Android)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'  # Android 构建需要 Java 17
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Initialize Tauri Android environment
+        run: npm run tauri android init
+        env:
+          # 确保 Android SDK 路径被正确识别
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+
+      - name: Build Tauri Android APK
+        run: npm run tauri android build -- --target aarch64 --debug
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-android-apk
+          path: |
+            src-tauri/target/aarch64-linux-android/release/bundle/apk/*.apk
+            src-tauri/target/armv7-linux-androideabi/release/bundle/apk/*.apk
+            src-tauri/target/x86_64-linux-android/release/bundle/apk/*.apk
