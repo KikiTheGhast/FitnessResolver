@@ -11,9 +11,8 @@ jobs:
     name: Build for ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false  # 单个平台失败不影响其他平台
+      fail-fast: false
       matrix:
-        # 直接定义平台数组，每个元素包含完整配置
         include:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
@@ -59,12 +58,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          # 如果有锁文件可以恢复缓存配置
+          # cache: 'npm'
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           targets: ${{ matrix.target }}
+
+      - name: Install cargo-tauri
+        run: cargo install cargo-tauri
 
       - name: Install system dependencies (Linux)
         if: matrix.os == 'ubuntu-latest' && matrix.dependencies
@@ -77,7 +81,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install npm dependencies
-        run: npm install
+        run: npm install  # 有锁文件时改为 npm ci
 
       - name: Build Tauri app
         run: ${{ matrix.build-command }}
