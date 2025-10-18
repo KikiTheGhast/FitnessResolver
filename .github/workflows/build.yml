@@ -77,7 +77,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install npm dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build Tauri app
         run: ${{ matrix.build-command }}
