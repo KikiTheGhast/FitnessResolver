@@ -64,4 +64,4 @@ jobs:
         with:
           name: tauri-android-apk
           path: |
-            src-tauri/gen/android/app/build/outputs/apk/universal/debug/*.apk
+            src-tauri/gen/android/app/build/outputs/apk/universal/release/*.apk
