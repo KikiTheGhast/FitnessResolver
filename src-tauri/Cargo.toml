@@ -1,7 +1,7 @@
 [package]
-name = "fitnessresolver"
+name = "Fitness Solver"
 version = "0.1.0"
-description = "A Tauri App"
+description = "我不想要校园跑啊啊啊"
 authors = ["you"]
 edition = "2021"
 
