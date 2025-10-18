@@ -1,4 +1,4 @@
-name: Build Tauri 2 Android APK
+name: Tauri 2 Android APK Build
 
 on:
   push:
@@ -42,7 +42,7 @@ jobs:
           JAVA_HOME: ${{ steps.setup-java.outputs.path }}
 
       - name: Build Tauri Android APK
-        run: npm run tauri android build -- --release
+        run: npm run tauri android build -- --target aarch64 --release
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           JAVA_HOME: ${{ steps.setup-java.outputs.path }}
