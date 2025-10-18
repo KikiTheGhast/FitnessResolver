@@ -15,14 +15,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-
-      - name: Install dependencies
-        run: npm install
-
       - name: Set up Java (for Android SDK)
         uses: actions/setup-java@v4
         with:
@@ -33,26 +25,25 @@ jobs:
       - name: Set up Android SDK and NDK
         uses: android-actions/setup-android@v3
         with:
-          # 明确指定需要的 Android 组件（包含 NDK）
-          components: |
-            platform-tools
-            platforms;android-34
-            build-tools;34.0.0
-            ndk;26.1.10909125  # Tauri 2 推荐的 NDK 版本
-          # 强制设置环境变量
-          set-environment-variables: true
+          cmdline-tools-version: 13114758
 
       - name: Explicitly set Android environment variables
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV  # 通常与 ANDROID_HOME 一致
-          echo "NDK_HOME=$ANDROID_HOME/ndk/26.1.10909125" >> $GITHUB_ENV  # 匹配上面的 NDK 版本
-          # 验证变量是否生效
-          echo "ANDROID_HOME: $ANDROID_HOME"
-          echo "NDK_HOME: $NDK_HOME"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/19.0.13114758" >> $GITHUB_ENV  # 匹配上面的 NDK 版本
+          ls $ANDROID_HOME/ndk
 
       - name: Accept Android licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Install dependencies
+        run: npm install
 
       - name: Initialize Tauri Android environment
         run: npm run tauri android init
@@ -60,7 +51,6 @@ jobs:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
           NDK_HOME: ${{ env.NDK_HOME }}
-          JAVA_HOME: ${{ steps.setup-java.outputs.path }}
 
       - name: Build Tauri Android APK
         run: npm run tauri android build -- --target aarch64 --debug
@@ -68,7 +58,6 @@ jobs:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
           NDK_HOME: ${{ env.NDK_HOME }}
-          JAVA_HOME: ${{ steps.setup-java.outputs.path }}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
