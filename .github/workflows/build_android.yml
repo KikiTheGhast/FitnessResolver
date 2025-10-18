@@ -25,7 +25,7 @@ jobs:
       - name: Set up Android SDK and NDK
         uses: android-actions/setup-android@v3
         with:
-          cmdline-tools-version: 13676358
+          cmdline-tools-version: 13114758
 
       - name: Explicitly set Android environment variables
         run: |
