@@ -25,13 +25,13 @@ jobs:
       - name: Set up Android SDK and NDK
         uses: android-actions/setup-android@v3
         with:
-          cmdline-tools-version: 13114758
+          cmdline-tools-version: 13676358
 
       - name: Explicitly set Android environment variables
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV  # 通常与 ANDROID_HOME 一致
-          echo "NDK_HOME=$ANDROID_HOME/ndk/19.0.13114758" >> $GITHUB_ENV  # 匹配上面的 NDK 版本
+          echo "NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> $GITHUB_ENV  # 匹配上面的 NDK 版本
           ls $ANDROID_HOME/ndk
 
       - name: Accept Android licenses
