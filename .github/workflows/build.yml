@@ -14,31 +14,94 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # 其他平台配置保持不变...
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact-name: windows
+            output-path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/
+
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact-name: macos-x86_64
+            output-path: src-tauri/target/x86_64-apple-darwin/release/bundle/
+
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact-name: macos-arm64
+            output-path: src-tauri/target/aarch64-apple-darwin/release/bundle/
+
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact-name: linux-x86_64
+            output-path: src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/
+            dependencies: >
+              libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev
+              libayatana-appindicator3-dev librsvg2-dev patchelf
+
           - os: ubuntu-latest
             target: aarch64-linux-android
             artifact-name: android
             output-path: src-tauri/target/aarch64-linux-android/release/bundle/
             dependencies: >
               openjdk-17-jdk build-essential
+            # 安卓专用 NDK 版本和路径
             ndk-version: 26.1.10909125
-            ndk-api-level: 34  # 仅保留API级别数字，去掉"android-"前缀
+            ndk-target: 34
 
     steps:
-      # 其他步骤保持不变...
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+
+      - name: Install system dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest' && matrix.dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.dependencies }}
+
+      # 安卓专用：配置 NDK 并设置 Rust 链接器
+      - name: Setup Android SDK and NDK
+        if: matrix.target == 'aarch64-linux-android'
+        uses: android-actions/setup-android@v3
+        with:
+          # 明确指定 NDK 版本（Tauri 2 推荐 26+）
+          ndk-version: ${{ matrix.ndk-version }}
 
       - name: Configure Android linker for Rust
         if: matrix.target == 'aarch64-linux-android'
         run: |
+          # 导出 NDK 路径
           export NDK_HOME=$ANDROID_HOME/ndk/${{ matrix.ndk-version }}
-          # 修正链接器路径：使用 "aarch64-linux-android${API级别}-clang" 格式
+          # 设置 aarch64 架构的 Android 链接器
           echo "[target.aarch64-linux-android]" > $CARGO_HOME/config.toml
-          echo "linker = '$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android${{ matrix.ndk-api-level }}-clang'" >> $CARGO_HOME/config.toml
+          echo "linker = '$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android${{ matrix.ndk-target }}-clang'" >> $CARGO_HOME/config.toml
+          # 验证配置
           cat $CARGO_HOME/config.toml
+
+      - name: Install npm dependencies (including Tauri CLI)
+        run: npm install
 
       - name: Build Tauri app
         run: npx tauri build --target ${{ matrix.target }}
         env:
+          # 安卓构建需要明确指定 NDK 路径
           NDK_HOME: ${{ matrix.target == 'aarch64-linux-android' && format('{0}/ndk/{1}', env.ANDROID_HOME, matrix.ndk-version) || '' }}
-          # 安卓构建需要指定API级别
-          TAURI_ANDROID_API_LEVEL: ${{ matrix.ndk-api-level }}
+          # 代码签名配置（按需启用）
+          # TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          # TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-build-${{ matrix.artifact-name }}
+          path: ${{ matrix.output-path }}
+          if-no-files-found: error
