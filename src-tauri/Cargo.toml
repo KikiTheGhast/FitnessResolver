@@ -1,5 +1,5 @@
 [package]
-name = "Fitness Solver"
+name = "fitnessresolver"
 version = "0.1.0"
 description = "我不想要校园跑啊啊啊"
 authors = ["you"]
