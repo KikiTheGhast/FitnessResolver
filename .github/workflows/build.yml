@@ -17,25 +17,21 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact-name: windows
-            build-command: cargo tauri build --target x86_64-pc-windows-msvc
             output-path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/
 
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact-name: macos-x86_64
-            build-command: cargo tauri build --target x86_64-apple-darwin
             output-path: src-tauri/target/x86_64-apple-darwin/release/bundle/
 
           - os: macos-latest
             target: aarch64-apple-darwin
             artifact-name: macos-arm64
-            build-command: cargo tauri build --target aarch64-apple-darwin
             output-path: src-tauri/target/aarch64-apple-darwin/release/bundle/
 
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             artifact-name: linux-x86_64
-            build-command: cargo tauri build --target x86_64-unknown-linux-gnu
             output-path: src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/
             dependencies: >
               libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev
@@ -44,7 +40,6 @@ jobs:
           - os: ubuntu-latest
             target: aarch64-linux-android
             artifact-name: android
-            build-command: cargo tauri build --target aarch64-linux-android
             output-path: src-tauri/target/aarch64-linux-android/release/bundle/
             dependencies: >
               openjdk-17-jdk android-sdk-platform-tools android-sdk-build-tools
@@ -58,17 +53,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          # 如果有锁文件可以恢复缓存配置
-          # cache: 'npm'
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           targets: ${{ matrix.target }}
-
-      - name: Install cargo-tauri
-        run: cargo install cargo-tauri
 
       - name: Install system dependencies (Linux)
         if: matrix.os == 'ubuntu-latest' && matrix.dependencies
@@ -80,11 +70,11 @@ jobs:
         if: matrix.target == 'aarch64-linux-android'
         uses: android-actions/setup-android@v3
 
-      - name: Install npm dependencies
-        run: npm install  # 有锁文件时改为 npm ci
+      - name: Install npm dependencies (including Tauri CLI)
+        run: npm install
 
-      - name: Build Tauri app
-        run: ${{ matrix.build-command }}
+      - name: Build Tauri app (using npm CLI)
+        run: npx tauri build --target ${{ matrix.target }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
