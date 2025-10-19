@@ -38,6 +38,7 @@ const startRunning = async _ => {
 const heartbeat = async keep => {
     if (!shouldStop()) simulateDistance += 1000 / speed / 60
     let pos = getTrackPosition(simulateDistance)
+    if (document.getElementById('random').checked) pos = addRandomOffset(pos)
     if (positions.length > 0) {
         let last = positions[positions.length - 1]
         calculatedDistance += Math.ceil(calculateDistance(pos.latitude, pos.longitude, last.latitude, last.longitude))

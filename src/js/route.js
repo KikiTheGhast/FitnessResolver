@@ -1,4 +1,20 @@
 let latitude = (31.318217 + 31.31997) / 2, longitude = (121.392548 + 121.393845) / 2
+let offsetX = 0, offsetY = 0
+
+const earthRadius = 6378137; // 地球赤道半径（米）
+const radLat = latitude * Math.PI / 180;
+const lngPerMeter = 1 / (earthRadius * Math.cos(radLat)); // 1米对应的经度差（弧度）
+const latPerMeter = 1 / earthRadius; // 1米对应的纬度差（弧度）
+
+const clamp = (num, min, max) => Math.min(Math.max(num, min), max)
+
+const addRandomOffset = ({ latitude, longitude }) => {
+    offsetX += (Math.random() - 0.5) * 8, offsetY += (Math.random() - 0.5) * 8
+    offsetX = clamp(offsetX, -20, 20), offsetY = clamp(offsetY, -20, 20)
+    return {
+        latitude: latitude + offsetY * latPerMeter, longitude: longitude + offsetX * lngPerMeter
+    }
+}
 
 /**
  * 支持旋转的跑道位置计算函数（默认南北向，可自定义旋转角度）
@@ -10,7 +26,7 @@ let latitude = (31.318217 + 31.31997) / 2, longitude = (121.392548 + 121.393845)
  * @param {number} offsetY - Y方向偏移（米，向上为正）
  * @returns {Object} { latitude, longitude } 实时经纬度
  */
-function getTrackPosition(distance, centerLat = latitude, centerLng = longitude, rotation = 90, offsetX = 0, offsetY = 0) {
+function getTrackPosition(distance, centerLat = latitude, centerLng = longitude, rotation = 270, offsetX = 0, offsetY = 0) {
     // 1. 标准跑道参数（内圈）
     const straightLength = 84.39; // 单段直道长度（米）
     const bandRadius = 36.5;       // 弯道半径（米）
@@ -18,7 +34,9 @@ function getTrackPosition(distance, centerLat = latitude, centerLng = longitude,
     const totalCircumference = 2 * straightLength + 2 * bandCircumference; // ≈400米
 
     // 2. 累计移动距离
-    distance %= totalCircumference;
+    distance %= totalCircumference
+    //转反了，反向一下
+    distance = totalCircumference - distance
 
     // 3. 计算原始相对坐标（未旋转，默认东西向长轴）
     let x = 0, y = 0;
@@ -56,12 +74,6 @@ function getTrackPosition(distance, centerLat = latitude, centerLng = longitude,
     // 旋转公式：x' = x*cosθ - y*sinθ；y' = x*sinθ + y*cosθ
     const xRotated = x * cosRot - y * sinRot;
     const yRotated = x * sinRot + y * cosRot;
-
-    // 6. 旋转后的坐标转换为经纬度
-    const earthRadius = 6378137; // 地球赤道半径（米）
-    const radLat = centerLat * Math.PI / 180;
-    const lngPerMeter = 1 / (earthRadius * Math.cos(radLat)); // 1米对应的经度差（弧度）
-    const latPerMeter = 1 / earthRadius; // 1米对应的纬度差（弧度）
 
     return {
         latitude: centerLat + (yRotated * latPerMeter) * (180 / Math.PI),

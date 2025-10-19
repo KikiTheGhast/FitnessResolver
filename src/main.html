@@ -17,8 +17,7 @@
     <h1>跑步操作界面</h1>
     <button id="start" onclick="onClickStart()">开始跑步</button>
     <button id="end" onclick="onClickEnd()" disabled>结束跑步</button>
-    <br>
-    <br>
+    <h3>务必在退出软件前点击结束跑步！如果忘记了可以去小程序手动结束（你人得在操场）</h3>
     <div>
         <div style="display:inline-flex;">
             <div style="width:100px;">配速：</div>
@@ -27,6 +26,10 @@
             <div style="width:150px;" id="speedDisplay"></div>
         </div>
         <h3>PS：因为误差原因配速会比设置的小，将条拉到最右边可以停止移动</h3>
+        <input style="width:20px;" id="random" type="checkbox" checked>
+        <label for="random">随机抖动</label>
+    </div>
+    <div>
         <p>当前进度</p>
         <p id="progress"></p>
     </div>
