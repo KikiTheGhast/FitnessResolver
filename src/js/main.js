@@ -26,7 +26,8 @@ const shouldStop = _ => {
 }
 
 const startRunning = async _ => {
-    positions = [], simulateDistance = 0, calculatedDistance = 0, time = 0
+    positions = [], simulateDistance = Math.random() * 400, calculatedDistance = 0, time = 0
+    randomizePerlinNoise()
     let session = await post(urls.start, { fitnessId: fitnessId })
     if (session.status == 0) {
         let detail = session.detail
@@ -38,7 +39,6 @@ const startRunning = async _ => {
 const heartbeat = async keep => {
     if (!shouldStop()) simulateDistance += 1000 / speed / 60
     let pos = getTrackPosition(simulateDistance)
-    if (document.getElementById('random').checked) pos = addRandomOffset(pos)
     if (positions.length > 0) {
         let last = positions[positions.length - 1]
         calculatedDistance += Math.ceil(calculateDistance(pos.latitude, pos.longitude, last.latitude, last.longitude))

@@ -1,19 +1,13 @@
-let latitude = (31.318217 + 31.31997) / 2, longitude = (121.392548 + 121.393845) / 2
-let offsetX = 0, offsetY = 0
-
+const latitude = (31.318217 + 31.31997) / 2 - 0.000002, longitude = (121.392548 + 121.393845) / 2 //跑道中心点
 const earthRadius = 6378137; // 地球赤道半径（米）
 const radLat = latitude * Math.PI / 180;
 const lngPerMeter = 1 / (earthRadius * Math.cos(radLat)); // 1米对应的经度差（弧度）
 const latPerMeter = 1 / earthRadius; // 1米对应的纬度差（弧度）
 
-const clamp = (num, min, max) => Math.min(Math.max(num, min), max)
+let perlinX = new PerlinNoise1D(), perlinY = new PerlinNoise1D()
 
-const addRandomOffset = ({ latitude, longitude }) => {
-    offsetX += (Math.random() - 0.5) * 8, offsetY += (Math.random() - 0.5) * 8
-    offsetX = clamp(offsetX, -20, 20), offsetY = clamp(offsetY, -20, 20)
-    return {
-        latitude: latitude + offsetY * latPerMeter, longitude: longitude + offsetX * lngPerMeter
-    }
+const randomizePerlinNoise = _ => {
+    perlinX = new PerlinNoise1D(), perlinY = new PerlinNoise1D()
 }
 
 /**
@@ -26,38 +20,38 @@ const addRandomOffset = ({ latitude, longitude }) => {
  * @param {number} offsetY - Y方向偏移（米，向上为正）
  * @returns {Object} { latitude, longitude } 实时经纬度
  */
-function getTrackPosition(distance, centerLat = latitude, centerLng = longitude, rotation = 270, offsetX = 0, offsetY = 0) {
+const getTrackPosition = (distance, centerLat = latitude, centerLng = longitude, rotation = 270, offsetX = 0, offsetY = 0) => {
     // 1. 标准跑道参数（内圈）
     const straightLength = 84.39; // 单段直道长度（米）
     const bandRadius = 36.5;       // 弯道半径（米）
     const bandCircumference = Math.PI * bandRadius; // 单段弯道长度（≈114.66米）
     const totalCircumference = 2 * straightLength + 2 * bandCircumference; // ≈400米
 
-    // 2. 累计移动距离
-    distance %= totalCircumference
+    // 2. 移动距离
+    let progress = distance % totalCircumference
     //转反了，反向一下
-    distance = totalCircumference - distance
+    progress = totalCircumference - progress
 
     // 3. 计算原始相对坐标（未旋转，默认东西向长轴）
     let x = 0, y = 0;
-    if (distance <= straightLength) {
+    if (progress <= straightLength) {
         // 阶段1：右侧直道（东西向时，向右为X正方向）
-        x = straightLength / 2 - distance;
+        x = straightLength / 2 - progress;
         y = -bandRadius;
-    } else if (distance <= straightLength + bandCircumference) {
+    } else if (progress <= straightLength + bandCircumference) {
         // 阶段2：上弯道
-        const arcDistance = distance - straightLength;
+        const arcDistance = progress - straightLength;
         const angle = arcDistance / bandRadius; // 0→π弧度（顺时针）
         x = -straightLength / 2 - bandRadius * Math.sin(angle);
         y = -bandRadius * Math.cos(angle);
-    } else if (distance <= 2 * straightLength + bandCircumference) {
+    } else if (progress <= 2 * straightLength + bandCircumference) {
         // 阶段3：左侧直道
-        const straight2Distance = distance - (straightLength + bandCircumference);
+        const straight2Distance = progress - (straightLength + bandCircumference);
         x = -straightLength / 2 + straight2Distance;
         y = bandRadius;
     } else {
         // 阶段4：下弯道
-        const arcDistance = distance - (2 * straightLength + bandCircumference);
+        const arcDistance = progress - (2 * straightLength + bandCircumference);
         const angle = arcDistance / bandRadius; // 0→π弧度（顺时针）
         x = straightLength / 2 + bandRadius * Math.sin(angle);
         y = bandRadius * Math.cos(angle);
@@ -67,7 +61,12 @@ function getTrackPosition(distance, centerLat = latitude, centerLng = longitude,
     x += offsetX;
     y += offsetY;
 
-    // 5. 坐标旋转（核心：将东西向转换为南北向或自定义角度）
+    // 5.掺入柏林噪声，实现更真实的轨迹
+    // 平滑一些所以/32
+    x += perlinX.octaveNoise(distance / 32, 8, 0.5, -5, 5)
+    y += perlinY.octaveNoise(distance / 32, 8, 0.5, -5, 5)
+
+    // 6. 坐标旋转（核心：将东西向转换为南北向或自定义角度）
     const rotationRad = rotation * Math.PI / 180; // 角度转弧度
     const cosRot = Math.cos(rotationRad);
     const sinRot = Math.sin(rotationRad);
@@ -89,7 +88,7 @@ function getTrackPosition(distance, centerLat = latitude, centerLng = longitude,
  * @param {number} lng2 - 第二个点的经度（度）
  * @returns {number} 两点之间的距离（米，保留2位小数）
  */
-function calculateDistance(lat1, lng1, lat2, lng2) {
+const calculateDistance = (lat1, lng1, lat2, lng2) => {
     // 地球半径（米，WGS84椭球模型近似值）
     const earthRadius = 6371000;
 
